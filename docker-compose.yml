@@ -1,11 +1,6 @@
 version: '3'
 
 services:
-  db:
-    image: postgres
-    # volumes:
-    #   - /home/db:/var/lib/postgresql/data
-
   web:
     build: .
     command: python run.py
@@ -15,4 +10,19 @@ services:
     ports:
       - "5000:5000"
     depends_on:
-      - db
+      - db  # Ensure that the database service is started before the web service
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/crm  # Set your database connection string
+
+  db:
+    image: postgres:latest  # Use the latest PostgreSQL image
+    restart: always
+    volumes:
+      - pgdata:/var/lib/postgresql/data  # Named volume for persistent data
+    environment:
+      - POSTGRES_USER=postgres  # Set your desired username
+      - POSTGRES_PASSWORD=postgres  # Set your desired password
+      - POSTGRES_DB=crm  # Set your desired database name
+
+volumes:
+  pgdata:  # Define the named volume

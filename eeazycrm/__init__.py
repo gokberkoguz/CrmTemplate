@@ -2,6 +2,7 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
 from flask_login import LoginManager
+from sqlalchemy import inspect
 
 import os
 
@@ -27,13 +28,13 @@ def run_install(app_ctx):
     return app_ctx
 
 
-def create_app(config_class=ProductionConfig):
+def create_app(config_class=TestConfig):
     app = Flask(__name__, instance_relative_config=True)
 
     if os.getenv('FLASK_ENV') == 'development':
-        config_class = DevelopmentConfig()
+        config_class = TestConfig()
     elif os.getenv('FLASK_ENV') == 'production':
-        config_class = ProductionConfig()
+        config_class = TestConfig()
     elif os.getenv('FLASK_ENV') == 'testing':
         config_class = TestConfig()
 
@@ -47,8 +48,10 @@ def create_app(config_class=ProductionConfig):
 
     with app.app_context():
         # check if the config table exists, otherwise run install
-        engine = db.get_engine(app)
-        if not engine.dialect.has_table(engine, 'app_config'):
+        print(config_class)
+        # Use the inspector to check for table existence
+        inspector = inspect(db.engine)
+        if 'app_config' not in inspector.get_table_names():
             return run_install(app)
         else:
             from eeazycrm.settings.models import AppConfig

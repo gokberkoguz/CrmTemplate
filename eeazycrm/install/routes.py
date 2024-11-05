@@ -1,9 +1,11 @@
 from flask import render_template, session, url_for, redirect, Blueprint, request
 from eeazycrm import db, bcrypt
 import os
+import platform
 import sys
 from flask import current_app
 from tzlocal import get_localzone
+from sqlalchemy import create_engine, text
 
 from eeazycrm.settings.models import Currency, TimeZone, AppConfig
 from eeazycrm.leads.models import LeadSource, LeadStatus, Lead
@@ -35,7 +37,7 @@ def sys_info():
         'email_pass': True if os.getenv('EMAIL_PASS') else False
     }
     return render_template("install/sys_info.html", title="System Information",
-                           system_info=os.uname(), py_ver=sys.version, env_vars=env_vars)
+                           system_info=platform.platform(), py_ver=sys.version, env_vars=env_vars)
 
 
 @install.route("/install/sys_user", methods=['GET', 'POST'])
@@ -50,7 +52,7 @@ def setup_sys_user():
             session['admin_password'] = hashed_pwd
 
             # create currency & timezone data
-            db.session.execute(INSERT_SQL)
+            db.session.execute(text(INSERT_SQL))
             db.session.commit()
 
             return redirect(url_for('install.ex_settings'))
@@ -161,11 +163,11 @@ def finish():
         if form.validate_on_submit():
 
             if form.import_sample_data.data:
-                db.session.execute(SAMPLE_DATA % (
+                db.session.execute(text(SAMPLE_DATA % (
                     session['admin_first_name'],
                     session['admin_last_name'],
                     session['admin_email'],
-                    session['admin_password']))
+                    session['admin_password'])))
             else:
                 empty_setup()
 
